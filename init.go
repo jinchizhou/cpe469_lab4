@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
   "time"
-  // "sync"
+  "sync"
 )
 
 type Node struct {
@@ -49,9 +49,12 @@ func killOneNode(live_table [][]bool, candidates []Node){
 		}
 	}
 }
-func exchangeTables(i int, live_table [][]bool, candidates []Node, connector []int){
-	// assume if status of candidate is false, it is dead, so return
+func exchangeTables(i int, live_table [][]bool, candidates []Node, connector []int, wg *sync.WaitGroup, mutex *sync.RWMutex){
+  defer wg.Done()
+  mutex.Lock()
+  // assume if status of candidate is false, it is dead, so return
 	if (!candidates[i].status){
+    mutex.Unlock()
 		return
 	}
 	p_index := candidates[i].prev_index
@@ -67,9 +70,10 @@ func exchangeTables(i int, live_table [][]bool, candidates []Node, connector []i
 	// loop through prev_index and update on live_table
 	for j:=0; j < 8; j++{
 		if(!live_table[p_index][j]){
-			live_table[i][j] = false
+      live_table[i][j] = false
 		}
-	}
+  }
+  mutex.Unlock()
 }
 func main(){
   // initialize global table with every node's status
@@ -139,7 +143,8 @@ func main(){
   time_ex_table := time.Now()
   // every 5 sec, one node dies
   time_node := time.Now()
-  // var wg sync.WaitGroup
+  var wg sync.WaitGroup
+  mutex := sync.RWMutex{}
   for alive(candidates){
     // one node dies
     if (time.Since(time_node).Seconds() > 2){
@@ -155,14 +160,10 @@ func main(){
       connector[1] = -1
       // exchange tables
       for i:= 0; i < 8; i++{
-        // go func(){
-        //   wg.Add(1)
-        //   exchangeTables(i, tables, candidates, connector)
-        //   defer wg.Done()
-        // }()
-        exchangeTables(i, tables, candidates, connector)
+        wg.Add(1)
+        go exchangeTables(i, tables, candidates, connector, &wg, &mutex)
       }
-      // wg.Wait()
+      wg.Wait()
       if (connector[0] != -1){
         // one node died, so connect connector[0] to connector[1]
         candidates[connector[0]].prev_index = connector[1]
@@ -174,5 +175,4 @@ func main(){
     }
   }
   // done
-
 }
