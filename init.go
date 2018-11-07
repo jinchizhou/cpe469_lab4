@@ -51,29 +51,32 @@ func killOneNode(live_table [][]bool, candidates []Node){
 }
 func exchangeTables(i int, live_table [][]bool, candidates []Node, connector []int, wg *sync.WaitGroup, mutex *sync.RWMutex){
   defer wg.Done()
-  mutex.Lock()
   // assume if status of candidate is false, it is dead, so return
   if (!candidates[i].status){
-    mutex.Unlock()
     return
   }
   p_index := candidates[i].prev_index
   n_index := candidates[i].next_index
   // if previous is dead
   if (!candidates[p_index].status){
+    mutex.Lock()
     connector[0] = i
+    mutex.Unlock()
   }
   // if next is dead
   if (!candidates[n_index].status){
+    mutex.Lock()
     connector[1] = i;
+    mutex.Unlock()
   }
   // loop through prev_index and update on live_table
   for j:=0; j < 8; j++{
     if(!live_table[p_index][j]){
+      mutex.Lock()
       live_table[i][j] = false
+      mutex.Unlock()
     }
   }
-  mutex.Unlock()
 }
 func main(){
   // initialize global table with every node's status
