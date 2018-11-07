@@ -1,0 +1,5 @@
+To run the code, run the command "go run lab4.go"
+Hbcounter gets incremented every time the main for loop runs(line 151).
+Sending to HB tables happens every 0.1 seconds.
+A node fails every 5 seconds.
+Simulation ends with one node still alive.
